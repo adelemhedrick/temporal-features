@@ -1,0 +1,11 @@
+logs/*
+# Terraform state files
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+
+# Terraform vars might contain sensitive info
+terraform/terraform.tfvars
+
+# MacOS system files
+.DS_Store
