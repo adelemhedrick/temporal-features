@@ -1,22 +1,54 @@
+resource "google_service_account" "temporal_service_account" {
+  account_id   = "temporal-service-account"
+  display_name = "Temporal Service Account"
+}
+
+resource "google_project_iam_member" "bigquery_user" {
+  project = var.project_id
+  role    = "roles/bigquery.user"
+  member  = "serviceAccount:${google_service_account.temporal_service_account.email}"
+}
+
+resource "google_project_iam_member" "compute_network_user" {
+  project = var.project_id
+  role    = "roles/compute.networkUser"
+  member  = "serviceAccount:${google_service_account.temporal_service_account.email}"
+}
+
+resource "google_project_iam_member" "compute_security_user" {
+  project = var.project_id
+  role    = "roles/compute.securityAdmin"
+  member  = "serviceAccount:${google_service_account.temporal_service_account.email}"
+}
+
+resource "google_project_iam_member" "dataproc_worker" {
+  project = var.project_id
+  role    = "roles/dataproc.worker"
+  member  = "serviceAccount:${google_service_account.temporal_service_account.email}"
+}
+
+resource "google_project_iam_member" "service_account_user" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountUser"
+  member  = "serviceAccount:${google_service_account.temporal_service_account.email}"
+}
+
+resource "google_project_iam_member" "storage_object_admin" {
+  project = var.project_id
+  role    = "roles/storage.objectAdmin"
+  member  = "serviceAccount:${google_service_account.temporal_service_account.email}"
+}
+
 resource "google_project_service" "bigquery" {
   project = var.project_id
   service = "bigquery.googleapis.com"
+  disable_dependent_services = true
+  disable_on_destroy = true
 }
 
 resource "google_project_service" "dataproc" {
   project = var.project_id
   service = "dataproc.googleapis.com"
-}
-
-resource "google_bigquery_dataset" "project_dataset" {
-  dataset_id                  = "temporal"
-  location                    = var.region
-  delete_contents_on_destroy  = false
-
-  access {
-    role          = "roles/bigquery.dataOwner"
-    user_by_email = var.service_account_email
-  }
 }
 
 resource "google_compute_network" "temporal_network" {
@@ -57,7 +89,6 @@ resource "google_dataproc_cluster" "temporal_features" {
   name    = "temporal-features"
   region  = var.region
   project = var.project_id
-
   cluster_config {
     gce_cluster_config {
       subnetwork = google_compute_subnetwork.temporal_subnetwork.self_link
@@ -82,8 +113,6 @@ resource "google_dataproc_cluster" "temporal_features" {
   }
 }
 
-
-
 resource "google_dataproc_job" "temporal_features_dataproc_job" {
   region = var.region
   project = var.project_id
@@ -102,11 +131,8 @@ resource "google_dataproc_job" "temporal_features_dataproc_job" {
   }
 }
 
-
 resource "google_storage_bucket" "dataproc_bucket" {
   name     = "temporal-features-dataproc-bucket"
   location = var.region
+  force_destroy = true
 }
-
-
-
